@@ -45,7 +45,7 @@ pub struct KbdIn {
 const INOTIFY_TOKEN_VALUE: usize = 0;
 const INOTIFY_TOKEN: Token = Token(INOTIFY_TOKEN_VALUE);
 
-pub static WAIT_DEVICE_MS: AtomicU64 = AtomicU64::new(200);
+pub static WAIT_DEVICE_MS: AtomicU64 = AtomicU64::new(2000);
 
 impl KbdIn {
     pub fn new(
