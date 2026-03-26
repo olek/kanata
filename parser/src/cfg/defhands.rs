@@ -195,7 +195,7 @@ pub(super) fn parse_tap_hold_opposite_hand(
     let timeout_action = match timeout_behavior {
         DecisionBehavior::Tap => tap_action,
         DecisionBehavior::Hold => hold_action,
-        DecisionBehavior::Ignore => unreachable!(),
+        DecisionBehavior::Ignore => s.a.sref(Action::NoOp),
     };
 
     let neutral_keys_static = s.a.sref_vec(neutral_keys);
@@ -343,7 +343,7 @@ pub(super) fn parse_tap_hold_opposite_hand_release(
     let timeout_action = match timeout_behavior {
         DecisionBehavior::Tap => tap_action,
         DecisionBehavior::Hold => hold_action,
-        DecisionBehavior::Ignore => unreachable!(),
+        DecisionBehavior::Ignore => s.a.sref(Action::NoOp),
     };
 
     let neutral_keys_static = s.a.sref_vec(neutral_keys);
@@ -405,10 +405,11 @@ fn parse_decision_behavior_tap_hold(
 
     match expr
         .atom(s.vars())
-        .ok_or_else(|| anyhow_expr!(expr, "expected tap or hold"))?
+        .ok_or_else(|| anyhow_expr!(expr, "expected tap, hold, or ignore"))?
     {
         "tap" => Ok(DecisionBehavior::Tap),
         "hold" => Ok(DecisionBehavior::Hold),
-        v => bail_expr!(expr, "expected tap or hold for timeout; got '{}'", v),
+        "ignore" => Ok(DecisionBehavior::Ignore),
+        v => bail_expr!(expr, "expected tap, hold, or ignore for timeout; got '{}'", v),
     }
 }
