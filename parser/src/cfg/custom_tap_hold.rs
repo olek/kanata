@@ -35,6 +35,7 @@ pub(crate) enum DecisionBehavior {
     Tap,
     Hold,
     Ignore,
+    Discard,
 }
 
 /// The function-trait object stored inside `HoldTapConfig::Custom`.
@@ -262,7 +263,7 @@ pub(crate) fn custom_tap_hold_opposite_hand(
                         match neutral_behavior {
                             DecisionBehavior::Tap => return (Some(WaitingAction::Tap), false),
                             DecisionBehavior::Hold => return (Some(WaitingAction::Hold), false),
-                            DecisionBehavior::Ignore => continue,
+                            DecisionBehavior::Ignore | DecisionBehavior::Discard => continue,
                         }
                     }
                 }
@@ -276,14 +277,14 @@ pub(crate) fn custom_tap_hold_opposite_hand(
                     (Hand::Left, Hand::Left) | (Hand::Right, Hand::Right) => match same_hand {
                         DecisionBehavior::Tap => return (Some(WaitingAction::Tap), false),
                         DecisionBehavior::Hold => return (Some(WaitingAction::Hold), false),
-                        DecisionBehavior::Ignore => continue,
+                        DecisionBehavior::Ignore | DecisionBehavior::Discard => continue,
                     },
                     _ => {
                         // At least one key is Neutral (not in defhands)
                         match unknown_hand {
                             DecisionBehavior::Tap => return (Some(WaitingAction::Tap), false),
                             DecisionBehavior::Hold => return (Some(WaitingAction::Hold), false),
-                            DecisionBehavior::Ignore => continue,
+                            DecisionBehavior::Ignore | DecisionBehavior::Discard => continue,
                         }
                     }
                 }
@@ -330,7 +331,7 @@ pub(crate) fn custom_tap_hold_opposite_hand_release(
                         match neutral_behavior {
                             DecisionBehavior::Tap => return (Some(WaitingAction::Tap), false),
                             DecisionBehavior::Hold => return (Some(WaitingAction::Hold), false),
-                            DecisionBehavior::Ignore => continue,
+                            DecisionBehavior::Ignore | DecisionBehavior::Discard => continue,
                         }
                     }
                 }
@@ -344,14 +345,14 @@ pub(crate) fn custom_tap_hold_opposite_hand_release(
                     (Hand::Left, Hand::Left) | (Hand::Right, Hand::Right) => match same_hand {
                         DecisionBehavior::Tap => return (Some(WaitingAction::Tap), false),
                         DecisionBehavior::Hold => return (Some(WaitingAction::Hold), false),
-                        DecisionBehavior::Ignore => continue,
+                        DecisionBehavior::Ignore | DecisionBehavior::Discard => continue,
                     },
                     _ => {
                         // At least one key is Neutral (not in defhands)
                         match unknown_hand {
                             DecisionBehavior::Tap => return (Some(WaitingAction::Tap), false),
                             DecisionBehavior::Hold => return (Some(WaitingAction::Hold), false),
-                            DecisionBehavior::Ignore => continue,
+                            DecisionBehavior::Ignore | DecisionBehavior::Discard => continue,
                         }
                     }
                 }

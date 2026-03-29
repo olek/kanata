@@ -192,10 +192,11 @@ pub(super) fn parse_tap_hold_opposite_hand(
         }
     }
 
+    let discard_queue_on_timeout = matches!(timeout_behavior, DecisionBehavior::Discard);
     let timeout_action = match timeout_behavior {
         DecisionBehavior::Tap => tap_action,
         DecisionBehavior::Hold => hold_action,
-        DecisionBehavior::Ignore => s.a.sref(Action::NoOp),
+        DecisionBehavior::Ignore | DecisionBehavior::Discard => s.a.sref(Action::NoOp),
     };
 
     let neutral_keys_static = s.a.sref_vec(neutral_keys);
@@ -216,6 +217,7 @@ pub(super) fn parse_tap_hold_opposite_hand(
         timeout_action: *timeout_action,
         on_press_reset_timeout_to: None,
         require_prior_idle,
+        discard_queue_on_timeout,
     }))))
 }
 
@@ -340,10 +342,11 @@ pub(super) fn parse_tap_hold_opposite_hand_release(
         }
     }
 
+    let discard_queue_on_timeout = matches!(timeout_behavior, DecisionBehavior::Discard);
     let timeout_action = match timeout_behavior {
         DecisionBehavior::Tap => tap_action,
         DecisionBehavior::Hold => hold_action,
-        DecisionBehavior::Ignore => s.a.sref(Action::NoOp),
+        DecisionBehavior::Ignore | DecisionBehavior::Discard => s.a.sref(Action::NoOp),
     };
 
     let neutral_keys_static = s.a.sref_vec(neutral_keys);
@@ -364,6 +367,7 @@ pub(super) fn parse_tap_hold_opposite_hand_release(
         timeout_action: *timeout_action,
         on_press_reset_timeout_to: None,
         require_prior_idle,
+        discard_queue_on_timeout,
     }))))
 }
 
@@ -405,11 +409,12 @@ fn parse_decision_behavior_tap_hold(
 
     match expr
         .atom(s.vars())
-        .ok_or_else(|| anyhow_expr!(expr, "expected tap, hold, or ignore"))?
+        .ok_or_else(|| anyhow_expr!(expr, "expected tap, hold, ignore, or discard"))?
     {
         "tap" => Ok(DecisionBehavior::Tap),
         "hold" => Ok(DecisionBehavior::Hold),
         "ignore" => Ok(DecisionBehavior::Ignore),
-        v => bail_expr!(expr, "expected tap, hold, or ignore for timeout; got '{}'", v),
+        "discard" => Ok(DecisionBehavior::Discard),
+        v => bail_expr!(expr, "expected tap, hold, ignore, or discard for timeout; got '{}'", v),
     }
 }

@@ -190,6 +190,9 @@ where
     /// If `Some(n)`, uses `n` instead of the global value (0 = disabled for this action).
     /// If `None`, falls back to the global `defcfg` value.
     pub require_prior_idle: Option<u16>,
+    /// When true and the hold-tap times out, discard all queued key events
+    /// instead of replaying them. Used by `(timeout discard)`.
+    pub discard_queue_on_timeout: bool,
 }
 
 /// Define one shot key behaviour.

@@ -2338,7 +2338,7 @@ Internally it uses the same `HoldTapConfig::Custom` machinery as `tap-hold-relea
 |===
 | Option | Values | Default | Description
 
-| `(timeout <value>)` | `tap`, `hold`, `ignore` | `tap` | Action when hold timeout elapses (optimized for home-row-mod behavior).
+| `(timeout <value>)` | `tap`, `hold`, `ignore`, `discard` | `tap` | Action when hold timeout elapses. `discard` drops all queued keys instead of replaying them.
 | `(same-hand <value>)` | `tap`, `hold`, `ignore` | `tap` | Action when a same-hand key is pressed.
 | `(neutral-keys key ...)` | one or more key names | (empty) | Keys treated as neutral, overriding their `defhands` assignment.
 | `(neutral <value>)` | `tap`, `hold`, `ignore` | `ignore` | Action when a `neutral-keys` key is pressed.

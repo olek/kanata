@@ -127,6 +127,7 @@ Params in order:
         timeout_action: *hold_action,
         on_press_reset_timeout_to: None,
         require_prior_idle: opts.require_prior_idle,
+        discard_queue_on_timeout: false,
     }))))
 }
 
@@ -191,6 +192,7 @@ pub(crate) fn parse_tap_hold_timeout(
         timeout_action: *timeout_action,
         on_press_reset_timeout_to,
         require_prior_idle: opts.require_prior_idle,
+        discard_queue_on_timeout: false,
     }))))
 }
 
@@ -225,6 +227,7 @@ Params in order:
         timeout_action: *tap_action,
         on_press_reset_timeout_to: None,
         require_prior_idle: opts.require_prior_idle,
+        discard_queue_on_timeout: false,
     }))))
 }
 
@@ -263,6 +266,7 @@ Params in order:
         timeout_action: *hold_action,
         on_press_reset_timeout_to: None,
         require_prior_idle: opts.require_prior_idle,
+        discard_queue_on_timeout: false,
     }))))
 }
 
@@ -306,6 +310,7 @@ Params in order:
         timeout_action: *hold_action,
         on_press_reset_timeout_to: None,
         require_prior_idle: opts.require_prior_idle,
+        discard_queue_on_timeout: false,
     }))))
 }
 
@@ -412,6 +417,7 @@ Followed by optional lists:
         timeout_action: *hold_action,
         on_press_reset_timeout_to: None,
         require_prior_idle,
+        discard_queue_on_timeout: false,
     }))))
 }
 

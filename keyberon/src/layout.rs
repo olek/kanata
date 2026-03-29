@@ -463,6 +463,7 @@ pub struct WaitingState<'a, T: 'a + std::fmt::Debug> {
     config: WaitingConfig<'a, T>,
     layer_stack: LayerStack,
     prev_queue_len: QueueLen,
+    discard_queue_on_timeout: bool,
 }
 
 /// Actions that can be triggered for a key configured for HoldTap.
@@ -1362,6 +1363,7 @@ impl<'a, const C: usize, const R: usize, T: 'a + Copy + std::fmt::Debug> Layout<
                 WaitingConfig::TapDance(_) => 0,
             };
             let layer_stack = w.layer_stack.clone();
+            let discard_queue = w.discard_queue_on_timeout;
             self.tap_hold_tracker.set_hold_activated(coord, &w.config);
             if idx < 0 {
                 self.waiting = None;
@@ -1371,13 +1373,18 @@ impl<'a, const C: usize, const R: usize, T: 'a + Copy + std::fmt::Debug> Layout<
             if coord == self.last_press_tracker.coord {
                 self.last_press_tracker.tap_hold_timeout = 0;
             }
-            self.do_action(
-                timeout_action,
-                coord,
-                delay,
-                false,
-                &mut layer_stack.into_iter(),
-            )
+            if discard_queue {
+                self.queue.clear();
+                CustomEvent::NoEvent
+            } else {
+                self.do_action(
+                    timeout_action,
+                    coord,
+                    delay,
+                    false,
+                    &mut layer_stack.into_iter(),
+                )
+            }
         } else {
             CustomEvent::NoEvent
         }
@@ -1854,6 +1861,7 @@ impl<'a, const C: usize, const R: usize, T: 'a + Copy + std::fmt::Debug> Layout<
                 tap_hold_interval,
                 on_press_reset_timeout_to,
                 require_prior_idle,
+                discard_queue_on_timeout,
             }) => {
                 // Typing streak detection: if a different physical key was pressed
                 // recently, resolve as tap immediately without entering WaitingState.
@@ -1893,6 +1901,7 @@ impl<'a, const C: usize, const R: usize, T: 'a + Copy + std::fmt::Debug> Layout<
                         config: WaitingConfig::HoldTap(*config),
                         layer_stack: layer_stack.collect(),
                         prev_queue_len: QueueLen::MAX,
+                        discard_queue_on_timeout: *discard_queue_on_timeout,
                     };
                     if self.waiting.is_some() {
                         self.extra_waiting.push_back(waiting);
@@ -1949,6 +1958,7 @@ impl<'a, const C: usize, const R: usize, T: 'a + Copy + std::fmt::Debug> Layout<
                             }),
                             layer_stack: layer_stack.collect(),
                             prev_queue_len: QueueLen::MAX,
+                            discard_queue_on_timeout: false,
                         });
                     }
                     TapDanceConfig::Eager => {
@@ -1992,6 +2002,7 @@ impl<'a, const C: usize, const R: usize, T: 'a + Copy + std::fmt::Debug> Layout<
                     config: WaitingConfig::Chord(chords),
                     layer_stack: layer_stack.collect(),
                     prev_queue_len: QueueLen::MAX,
+                    discard_queue_on_timeout: false,
                 });
             }
             &KeyCode(keycode) => {
@@ -2330,6 +2341,7 @@ mod test {
                     timeout_action: k(RShift),
                     config: HoldTapConfig::Default,
                     tap_hold_interval: 0,
+                    discard_queue_on_timeout: false,
                 }),
                 HoldTap(&HoldTapAction {
                     on_press_reset_timeout_to: None,
@@ -2340,6 +2352,7 @@ mod test {
                     tap: k(Enter),
                     config: HoldTapConfig::Default,
                     tap_hold_interval: 0,
+                    discard_queue_on_timeout: false,
                 }),
             ]],
             [[Trans, MultipleKeyCodes(&[LCtrl, Enter].as_slice())]],
@@ -2386,6 +2399,7 @@ mod test {
                     timeout_action: l(1),
                     config: HoldTapConfig::Default,
                     tap_hold_interval: 0,
+                    discard_queue_on_timeout: false,
                 }),
                 HoldTap(&HoldTapAction {
                     on_press_reset_timeout_to: None,
@@ -2396,6 +2410,7 @@ mod test {
                     tap: k(Enter),
                     config: HoldTapConfig::Default,
                     tap_hold_interval: 0,
+                    discard_queue_on_timeout: false,
                 }),
             ]],
             [[Trans, MultipleKeyCodes(&[LCtrl, Enter].as_slice())]],
@@ -2441,6 +2456,7 @@ mod test {
                 tap: k(Space),
                 config: HoldTapConfig::Default,
                 tap_hold_interval: 0,
+                discard_queue_on_timeout: false,
             }),
             HoldTap(&HoldTapAction {
                 on_press_reset_timeout_to: None,
@@ -2451,6 +2467,7 @@ mod test {
                 tap: k(Enter),
                 config: HoldTapConfig::Default,
                 tap_hold_interval: 0,
+                discard_queue_on_timeout: false,
             }),
         ]]];
         let mut layout = Layout::new(LAYERS);
@@ -2494,6 +2511,7 @@ mod test {
                 tap: k(Space),
                 config: HoldTapConfig::HoldOnOtherKeyPress,
                 tap_hold_interval: 0,
+                discard_queue_on_timeout: false,
             }),
             k(Enter),
         ]]];
@@ -2555,6 +2573,7 @@ mod test {
                 config: HoldTapConfig::Order { buffer: 0 },
                 tap_hold_interval: 0,
                 require_prior_idle: None,
+                discard_queue_on_timeout: false,
             }),
             k(Enter),
         ]]];
@@ -2587,6 +2606,7 @@ mod test {
                 config: HoldTapConfig::Order { buffer: 0 },
                 tap_hold_interval: 0,
                 require_prior_idle: None,
+                discard_queue_on_timeout: false,
             }),
             k(Enter),
         ]]];
@@ -2625,6 +2645,7 @@ mod test {
                 config: HoldTapConfig::Order { buffer: 0 },
                 tap_hold_interval: 0,
                 require_prior_idle: None,
+                discard_queue_on_timeout: false,
             }),
             k(Enter),
         ]]];
@@ -2658,6 +2679,7 @@ mod test {
                 config: HoldTapConfig::Order { buffer: 0 },
                 tap_hold_interval: 0,
                 require_prior_idle: None,
+                discard_queue_on_timeout: false,
             }),
             k(Enter),
             k(Tab),
@@ -2713,6 +2735,7 @@ mod test {
                 tap: k(Space),
                 config: HoldTapConfig::Order { buffer: 50 },
                 tap_hold_interval: 0,
+                discard_queue_on_timeout: false,
             }),
             k(Enter),
         ]]];
@@ -2755,6 +2778,7 @@ mod test {
                 tap: k(Space),
                 config: HoldTapConfig::PermissiveHold,
                 tap_hold_interval: 0,
+                discard_queue_on_timeout: false,
             }),
             k(Enter),
         ]]];
@@ -2797,6 +2821,7 @@ mod test {
                 tap: k(Space),
                 config: HoldTapConfig::Default,
                 tap_hold_interval: 0,
+                discard_queue_on_timeout: false,
             }),
             HoldTap(&HoldTapAction {
                 on_press_reset_timeout_to: None,
@@ -2807,6 +2832,7 @@ mod test {
                 tap: k(A),
                 config: HoldTapConfig::Default,
                 tap_hold_interval: 0,
+                discard_queue_on_timeout: false,
             }),
             HoldTap(&HoldTapAction {
                 on_press_reset_timeout_to: None,
@@ -2817,6 +2843,7 @@ mod test {
                 tap: k(A),
                 config: HoldTapConfig::Default,
                 tap_hold_interval: 0,
+                discard_queue_on_timeout: false,
             }),
         ]]];
         let mut layout = Layout::new(LAYERS);
@@ -2983,6 +3010,7 @@ mod test {
                 tap: k(Kb0),
                 config: HoldTapConfig::Custom(&always_tap),
                 tap_hold_interval: 0,
+                discard_queue_on_timeout: false,
             }),
             HoldTap(&HoldTapAction {
                 on_press_reset_timeout_to: None,
@@ -2993,6 +3021,7 @@ mod test {
                 tap: k(Kb2),
                 config: HoldTapConfig::Custom(&always_hold),
                 tap_hold_interval: 0,
+                discard_queue_on_timeout: false,
             }),
             HoldTap(&HoldTapAction {
                 on_press_reset_timeout_to: None,
@@ -3003,6 +3032,7 @@ mod test {
                 tap: k(Kb4),
                 config: HoldTapConfig::Custom(&always_nop),
                 tap_hold_interval: 0,
+                discard_queue_on_timeout: false,
             }),
             HoldTap(&HoldTapAction {
                 on_press_reset_timeout_to: None,
@@ -3013,6 +3043,7 @@ mod test {
                 tap: k(Kb6),
                 config: HoldTapConfig::Custom(&always_none),
                 tap_hold_interval: 0,
+                discard_queue_on_timeout: false,
             }),
         ]]];
         let mut layout = Layout::new(LAYERS);
@@ -3088,6 +3119,7 @@ mod test {
                 tap: k(Space),
                 config: HoldTapConfig::Default,
                 tap_hold_interval: 200,
+                discard_queue_on_timeout: false,
             }),
             k(Enter),
         ]]];
@@ -3145,6 +3177,7 @@ mod test {
                 tap: k(Space),
                 config: HoldTapConfig::Default,
                 tap_hold_interval: 200,
+                discard_queue_on_timeout: false,
             }),
             k(Enter),
             HoldTap(&HoldTapAction {
@@ -3156,6 +3189,7 @@ mod test {
                 tap: k(Enter),
                 config: HoldTapConfig::Default,
                 tap_hold_interval: 200,
+                discard_queue_on_timeout: false,
             }),
         ]]];
         let mut layout = Layout::new(LAYERS);
@@ -3271,6 +3305,7 @@ mod test {
             tap: k(Space),
             config: HoldTapConfig::Default,
             tap_hold_interval: 200,
+            discard_queue_on_timeout: false,
         })]]];
         let mut layout = Layout::new(LAYERS);
 
@@ -3316,6 +3351,7 @@ mod test {
                 tap: k(Space),
                 config: HoldTapConfig::Default,
                 tap_hold_interval: 200,
+                discard_queue_on_timeout: false,
             }),
             HoldTap(&HoldTapAction {
                 on_press_reset_timeout_to: None,
@@ -3326,6 +3362,7 @@ mod test {
                 tap: k(Enter),
                 config: HoldTapConfig::Default,
                 tap_hold_interval: 200,
+                discard_queue_on_timeout: false,
             }),
         ]]];
         let mut layout = Layout::new(LAYERS);
@@ -3845,6 +3882,7 @@ mod test {
                     tap: k(Space),
                     config: HoldTapConfig::Default,
                     tap_hold_interval: 0,
+                    discard_queue_on_timeout: false,
                 }),
                 NoOp,
             ]],
@@ -3912,6 +3950,7 @@ mod test {
                             tap: k(Space),
                             config: HoldTapConfig::Default,
                             tap_hold_interval: 0,
+                            discard_queue_on_timeout: false,
                         }),
                     ],
                     config: TapDanceConfig::Lazy,
@@ -4354,6 +4393,7 @@ mod test {
                         tap: k(Kb1),
                         config: HoldTapConfig::Default,
                         tap_hold_interval: 0,
+                        discard_queue_on_timeout: false,
                     }),
                 ),
                 (
@@ -4367,6 +4407,7 @@ mod test {
                         tap: k(Kb2),
                         config: HoldTapConfig::Default,
                         tap_hold_interval: 0,
+                        discard_queue_on_timeout: false,
                     }),
                 ),
             ],
@@ -4620,6 +4661,7 @@ mod test {
                     tap: Trans,
                     config: HoldTapConfig::Default,
                     tap_hold_interval: 200,
+                    discard_queue_on_timeout: false,
                 }),
             ]],
         ];
@@ -4669,6 +4711,7 @@ mod test {
                     tap: k(Space),
                     config: HoldTapConfig::Default,
                     tap_hold_interval: 200,
+                    discard_queue_on_timeout: false,
                 }),
             ]],
         ];
@@ -4906,6 +4949,7 @@ mod test {
                     tap: Trans,
                     config: HoldTapConfig::Default,
                     tap_hold_interval: 200,
+                    discard_queue_on_timeout: false,
                 }),
             ]],
             [[
@@ -4921,6 +4965,7 @@ mod test {
                     tap: Trans,
                     config: HoldTapConfig::Default,
                     tap_hold_interval: 200,
+                    discard_queue_on_timeout: false,
                 }),
             ]],
             [[
@@ -4936,6 +4981,7 @@ mod test {
                     tap: Trans,
                     config: HoldTapConfig::Default,
                     tap_hold_interval: 200,
+                    discard_queue_on_timeout: false,
                 }),
             ]],
         ];
@@ -5045,6 +5091,7 @@ mod test {
             tap_hold_interval: 0,
             on_press_reset_timeout_to: None,
             require_prior_idle: None,
+            discard_queue_on_timeout: false,
         })]]];
         let mut layout = Layout::new(LAYERS);
         // Nothing set initially.
@@ -5079,6 +5126,7 @@ mod test {
                 tap_hold_interval: 0,
                 on_press_reset_timeout_to: None,
                 require_prior_idle: None,
+                discard_queue_on_timeout: false,
             }),
             k(A),
         ]]];
@@ -5113,6 +5161,7 @@ mod test {
                 tap_hold_interval: 0,
                 on_press_reset_timeout_to: None,
                 require_prior_idle: None,
+                discard_queue_on_timeout: false,
             }),
             k(A),
         ]]];
@@ -5149,6 +5198,7 @@ mod test {
                 tap_hold_interval: 0,
                 on_press_reset_timeout_to: None,
                 require_prior_idle: None,
+                discard_queue_on_timeout: false,
             }),
             k(A),
         ]]];
